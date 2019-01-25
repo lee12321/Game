@@ -59,7 +59,7 @@ def index():
                            archive_flag=archive_flag)
 
 
-@blueprint.route('/detail/', methods=['GET'])
+@blueprint.route('/detail', methods=['GET'])
 def detail():
     try:
         blog = Blog.query.filter(Blog.is_delete == 0).filter_by(id=request.args.get('id', 0)).first()
