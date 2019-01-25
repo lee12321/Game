@@ -14,9 +14,9 @@ def create_app():
     from apps.models import db
     from admin import admin, security, user_datastore
 
-    app = Flask(__name__, static_folder=settings.ProductSetting.STATIC_FOLDER)
+    app = Flask(__name__, static_folder=settings.DevSetting.STATIC_FOLDER)
     app.register_blueprint(blueprint)  # 注册蓝图
-    app.config.from_object(settings.ProductSetting)  # 修改设置
+    app.config.from_object(settings.DevSetting)  # 修改设置
     db.init_app(app)  # APP注册数据库
     ckeditor = CKEditor(app)
     security_ctx = security.init_app(app, user_datastore)

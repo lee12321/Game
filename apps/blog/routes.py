@@ -7,6 +7,8 @@ from apps.models import db
 from sqlalchemy import extract
 from datetime import date, datetime
 
+PAGE_SIZE = 3
+
 
 def get_archives(all_posts):
     dateSet = set()
@@ -18,27 +20,32 @@ def get_archives(all_posts):
 
 @blueprint.route('/', methods=['GET'])
 def index():
+    archive_flag = False
+    recent = Blog.query.filter(Blog.is_delete == 0).order_by(Blog.date.desc())
+    all_posts = recent.all()
+    # 如果有日期参数，通过日期查询
     if request.args.get('date', ''):
         date_string = request.args.get('date', '')
         query_date = date_string.split('-')
-        recent = Blog.query.filter(Blog.is_delete == 0).filter(extract('year', Blog.date) == query_date[0]).filter(
-            extract('month', Blog.date) == query_date[1]).all()
-        page = 1
-        older = False
+        recent = recent.filter(Blog.is_delete == 0).filter(extract('year', Blog.date) == query_date[0]).filter(
+            extract('month', Blog.date) == query_date[1])
+        archive_flag = date_string
+        page = 0
     else:
-        recent = Blog.query.filter(Blog.is_delete == 0).order_by(Blog.date.desc()).all()
-        all_posts = recent
-        page = 1
+        recent = recent.all()
         if request.args.get('page', ''):
             try:
                 page = int(request.args.get('page', ''))
-                recent = recent[(page - 1) * 5:(page - 1) * 5 + 5]
+                recent = recent[(page - 1) * PAGE_SIZE:(page - 1) * PAGE_SIZE + PAGE_SIZE]
             except:
                 page = 1
-                recent = recent[(page - 1) * 5:(page - 1) * 5 + 5]
-        older = False
-        if len(all_posts) > (page - 1) * 5 + 5:
-            older = True
+                recent = recent[(page - 1) * PAGE_SIZE:(page - 1) * PAGE_SIZE + PAGE_SIZE]
+        else:
+            page = 1
+            recent = recent[(page - 1) * PAGE_SIZE:(page - 1) * PAGE_SIZE + PAGE_SIZE]
+
+    older = True if len(all_posts) > (page - 1) * PAGE_SIZE + PAGE_SIZE else False
+
     all_posts = Blog.query.filter(Blog.is_delete == 0).order_by(Blog.date.desc()).all()
     dateSet = get_archives(all_posts)
     featured = Featured.query.filter(Blog.is_delete == 0).first()
@@ -48,7 +55,8 @@ def index():
                            dateSet=dateSet,
                            page=page,
                            older=older,
-                           featured=featured)
+                           featured=featured,
+                           archive_flag=archive_flag)
 
 
 @blueprint.route('/detail/', methods=['GET'])

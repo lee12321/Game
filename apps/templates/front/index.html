@@ -12,7 +12,11 @@
 {% block main %}
 <div class="col-md-8 blog-main">
     <h3 class="pb-3 mb-4 font-italic border-bottom">
+        {% if not archive_flag %}
         最近的文章
+        {% else %}
+        {{ archive_flag }}<a href="{{ url_for('blueprint.index') }}">返回</a>
+        {% endif %}
     </h3>
     {% if not blogs %}
     <h2 class="blog-post-title">暂无文章。</h2>
