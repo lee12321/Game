@@ -1,10 +1,15 @@
 from flask import Flask, Blueprint
+
+from apps.blog.celery_task import make_celery
 from conf import settings
 from flask_ckeditor import CKEditor
 from flask_admin import helpers as admin_helpers
 from flask import url_for
 from flask_login import LoginManager
 from apps.models.UserModel import User
+from flask_login import current_user
+import flaskfilemanager
+
 blueprint = Blueprint('blueprint', __name__)
 
 import apps.blog.routes  # 导入视图函数
@@ -39,4 +44,18 @@ def create_app():
 
     admin.init_app(app)
 
+    def my_access_control_function():
+        """
+        :return: True if the user is allowed to access the filemanager, otherwise False
+        """
+        # You can do whatever permission check you need here
+        if not current_user.is_active or not current_user.is_authenticated:
+            return False
+
+        if current_user.has_role('superuser'):
+            return True
+
+        return False
+
+    flaskfilemanager.init(app, access_control_function=my_access_control_function)  # 文件管理器
     return app

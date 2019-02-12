@@ -5,7 +5,8 @@ import os
 from apps.models.BlogModel import Blog, Featured
 from apps.models import db
 from sqlalchemy import extract
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+
 
 PAGE_SIZE = 3
 
@@ -21,38 +22,42 @@ def get_archives(all_posts):
 @blueprint.route('/', methods=['GET'])
 def index():
     archive_flag = False
-    recent = Blog.query.filter(Blog.is_delete == 0).order_by(Blog.date.desc())
-    all_posts = recent.all()
-    # 如果有日期参数，通过日期查询
+    older = False
     if request.args.get('date', ''):
+        # 如果有日期参数，通过日期查询归档
         date_string = request.args.get('date', '')
         query_date = date_string.split('-')
-        recent = recent.filter(Blog.is_delete == 0).filter(extract('year', Blog.date) == query_date[0]).filter(
+        # 查询出所有请求日期下的文章
+        recent = Blog.query.filter(Blog.is_delete == 0).filter(extract('year', Blog.date) == query_date[0]).filter(
             extract('month', Blog.date) == query_date[1])
+        # 归档查询标记
         archive_flag = date_string
+        # 归档查询只有一页
         page = 0
     else:
-        recent = recent.all()
+        # 查询最近的文章
         if request.args.get('page', ''):
             try:
                 page = int(request.args.get('page', ''))
-                recent = recent[(page - 1) * PAGE_SIZE:(page - 1) * PAGE_SIZE + PAGE_SIZE]
             except:
                 page = 1
-                recent = recent[(page - 1) * PAGE_SIZE:(page - 1) * PAGE_SIZE + PAGE_SIZE]
         else:
             page = 1
-            recent = recent[(page - 1) * PAGE_SIZE:(page - 1) * PAGE_SIZE + PAGE_SIZE]
-
-    older = True if len(all_posts) > (page - 1) * PAGE_SIZE + PAGE_SIZE else False
+        # 更据页码参数查出
+        recent = Blog.query.filter(Blog.is_delete == 0).order_by(Blog.date.desc()).offset(
+            (page - 1) * PAGE_SIZE).limit((page - 1) * PAGE_SIZE + PAGE_SIZE).all()
+        # 查询是否存在下一页
+        next_page = Blog.query.filter(Blog.is_delete == 0).order_by(Blog.date.desc()).offset(
+            page * PAGE_SIZE).limit(page * PAGE_SIZE + PAGE_SIZE).all()
+        older = True if len(next_page) > PAGE_SIZE else False
 
     all_posts = Blog.query.filter(Blog.is_delete == 0).order_by(Blog.date.desc()).all()
-    dateSet = get_archives(all_posts)
+    date_set = get_archives(all_posts)
     featured = Featured.query.filter(Blog.is_delete == 0).first()
     print(featured)
     return render_template('front/index.html',
                            blogs=recent,
-                           dateSet=dateSet,
+                           dateSet=date_set,
                            page=page,
                            older=older,
                            featured=featured,
@@ -70,21 +75,21 @@ def detail():
     return render_template('front/detail.html', blog=blog)
 
 
-@blueprint.route('/files/<path:filename>')
-def uploaded_files(filename):
-    # ckeditor get images
-    path = os.path.abspath('./static/images')
-    return send_from_directory(path, filename)
 
+# @blueprint.route('/files/<path:filename>')
+# def uploaded_files(filename):
+#     # ckeditor get images
+#     path = os.path.abspath('./static/images')
+#     return send_from_directory(path, filename)
 
-@blueprint.route('/upload', methods=['POST'])
-def upload():
-    # ckeditor upload
-    f = request.files.get('upload')
-    # Add more validations here
-    extension = f.filename.split('.')[1].lower()
-    if extension not in ['jpg', 'gif', 'png', 'jpeg']:
-        return upload_fail(message='Image only!')
-    f.save(os.path.join(os.path.abspath('./static/images'), f.filename))
-    url = url_for('blueprint.uploaded_files', filename=f.filename)
-    return upload_success(url=url)  # return upload_success call
+# @blueprint.route('/upload', methods=['POST'])
+# def upload():
+#     # ckeditor upload
+#     f = request.files.get('upload')
+#     # Add more validations here
+#     extension = f.filename.split('.')[1].lower()
+#     if extension not in ['jpg', 'gif', 'png', 'jpeg']:
+#         return upload_fail(message='Image only!')
+#     f.save(os.path.join(os.path.abspath('./static/images'), f.filename))
+#     url = url_for('blueprint.uploaded_files', filename=f.filename)
+#     return upload_success(url=url)  # return upload_success call
