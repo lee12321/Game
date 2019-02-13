@@ -1,5 +1,5 @@
 from celery.schedules import crontab
-
+from flask import url_for
 from apps import create_app
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
@@ -36,4 +36,7 @@ def test(arg):
 
 if __name__ == '__main__':
     # print(app.url_map)
+    #
+    # with app.app_context():
+    #     print(url_for('flaskfilemanager.index'))
     manager.run()

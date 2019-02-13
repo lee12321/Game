@@ -2,6 +2,6 @@
 
 {% block tail %}
     {{ super() }}
-    {{ ckeditor.load() }}
+    {{ ckeditor.load(custom_url=url_for('static', filename='js/ckeditor/ckeditor.js')) }}
     {{ ckeditor.config(name='content') }}
 {% endblock %}
