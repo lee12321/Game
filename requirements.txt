@@ -25,7 +25,7 @@ geoip2==2.9.0
 idna==2.8
 IPy==0.83
 itsdangerous==1.1.0
-Jinja2==2.10
+Jinja2==2.11.3
 kombu==4.3.0
 littlefish==0.0.26
 lxml==4.3.1
